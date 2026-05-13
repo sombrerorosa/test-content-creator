@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Salon Content Engine</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,400&family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --cream: #faf6f1;
+  --warm: #f5ede3;
+  --rose: #c4705a;
+  --deep-rose: #8b3d2e;
+  --copper: #b5703e;
+  --gold: #d4a853;
+  --dark: #1a1210;
+  --mid: #3d2b24;
+  --muted: #7a5c52;
+  --light: #c4a99e;
+  --border: rgba(180,130,110,0.22);
+  --success: #5a8a6e;
+  --card: rgba(255,255,255,0.78);
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+body{font-family:'DM Sans',system-ui,sans-serif;background:var(--cream);color:var(--dark);min-height:100vh;overflow-x:hidden;}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 80% 60% at 20% 0%,rgba(228,196,176,0.3) 0%,transparent 60%),radial-gradient(ellipse 60% 80% at 85% 90%,rgba(180,112,62,0.15) 0%,transparent 55%);pointer-events:none;z-index:0;}
+#app{position:relative;z-index:1;max-width:480px;margin:0 auto;}
+
+/* HEADER */
+.header{padding:24px 18px 14px;border-bottom:1px solid var(--border);}
+.header-eye{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.25em;text-transform:uppercase;color:var(--copper);font-weight:700;margin-bottom:6px;}
+.header-title{font-family:'Playfair Display',serif;font-size:26px;font-weight:900;line-height:1.1;}
+.header-title em{color:var(--rose);font-style:italic;}
+.header-sub{font-size:12px;color:var(--muted);margin-top:5px;}
+
+/* TABS */
+.tabs{display:flex;gap:2px;padding:8px 10px;background:rgba(255,255,255,0.55);border-bottom:1px solid var(--border);overflow-x:auto;scrollbar-width:none;position:sticky;top:0;z-index:10;backdrop-filter:blur(12px);}
+.tabs::-webkit-scrollbar{display:none;}
+.tab{flex-shrink:0;padding:8px 12px;border-radius:9px;border:none;background:transparent;color:var(--muted);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;display:flex;align-items:center;gap:5px;transition:all .18s;}
+.tab.active{background:var(--dark);color:var(--cream);}
+.tab:active{opacity:.7;}
+
+/* PANELS */
+.panel{display:none;padding:18px 16px 100px;animation:fadeUp .3s ease;}
+.panel.active{display:block;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+/* TYPOGRAPHY */
+.lbl{font-family:'DM Mono',monospace;font-size:10px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--copper);margin-bottom:6px;display:block;}
+.section-title{font-family:'Playfair Display',serif;font-size:20px;font-weight:800;margin-bottom:4px;}
+.section-sub{font-size:12px;color:var(--muted);margin-bottom:16px;}
+
+/* CARDS */
+.card{background:var(--card);border:1.5px solid var(--border);border-radius:14px;padding:16px;backdrop-filter:blur(6px);}
+.card.accent{background:rgba(196,112,90,0.08);border-color:var(--rose);}
+.card.gold{background:rgba(212,168,83,0.08);border-color:var(--gold);}
+.card+.card{margin-top:10px;}
+
+/* INPUTS */
+input[type=text],input[type=password],textarea,select{width:100%;padding:10px 12px;border-radius:9px;border:1.5px solid var(--border);background:rgba(255,255,255,0.85);font-family:'DM Sans',sans-serif;font-size:13px;color:var(--dark);outline:none;transition:border-color .15s;-webkit-appearance:none;}
+input:focus,textarea:focus,select:focus{border-color:var(--rose);}
+textarea{resize:none;}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:7px;padding:11px 20px;border-radius:10px;border:none;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;-webkit-appearance:none;}
+.btn:active{transform:scale(.97);}
+.btn-dark{background:var(--dark);color:var(--cream);}
+.btn-rose{background:var(--rose);color:#fff;}
+.btn-gold{background:var(--gold);color:var(--dark);}
+.btn-outline{background:transparent;color:var(--mid);border:1.5px solid var(--border);}
+.btn-sm{padding:7px 14px;font-size:12px;}
+.btn:disabled{opacity:.5;cursor:not-allowed;}
+.btn-full{width:100%;justify-content:center;}
+
+/* GRID */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;}
+
+/* TREND CARDS */
+.trend-card{background:var(--card);border:1.5px solid var(--border);border-radius:12px;padding:14px;cursor:pointer;transition:all .15s;}
+.trend-card.selected,.trend-card:active{border-color:var(--rose);background:rgba(196,112,90,0.08);}
+.trend-emoji{font-size:22px;margin-bottom:6px;}
+.trend-name{font-weight:700;font-size:13px;margin-bottom:3px;}
+.trend-angle{font-size:11px;color:var(--muted);margin-bottom:6px;}
+.trend-badge{font-size:10px;color:var(--copper);font-weight:600;}
+.trend-bar{height:4px;background:rgba(180,130,110,0.15);border-radius:2px;margin-top:8px;}
+.trend-fill{height:100%;background:linear-gradient(90deg,var(--rose),var(--gold));border-radius:2px;}
+
+/* FORMAT / STYLE CARDS */
+.fmt-card,.style-card{border:1.5px solid var(--border);border-radius:10px;padding:11px 8px;text-align:center;cursor:pointer;transition:all .15s;background:rgba(255,255,255,0.6);}
+.fmt-card.selected{border-color:var(--rose);background:rgba(196,112,90,0.08);}
+.style-card.selected{border-color:var(--gold);background:rgba(212,168,83,0.1);}
+.fmt-card:active,.style-card:active{opacity:.7;}
+.fmt-icon,.style-icon{font-size:20px;margin-bottom:4px;}
+.fmt-name,.style-name{font-size:11px;font-weight:600;line-height:1.3;}
+.fmt-dur{font-size:10px;color:var(--muted);margin-top:2px;}
+
+/* SCRIPT OUTPUT */
+.script-tag{display:inline-block;color:#fff;font-size:9px;padding:2px 8px;border-radius:4px;font-weight:700;letter-spacing:.1em;margin-bottom:5px;}
+.script-text{font-size:13px;line-height:1.65;color:var(--mid);white-space:pre-line;}
+.script-note{font-size:11px;color:var(--copper);font-style:italic;margin-top:3px;}
+.retention-box{background:rgba(212,168,83,0.12);border-radius:8px;padding:11px;border-left:3px solid var(--gold);margin-top:12px;}
+
+/* IMAGE GRID */
+.img-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.img-card{border-radius:12px;overflow:hidden;border:1.5px solid var(--border);background:rgba(255,255,255,0.6);}
+.img-wrap{position:relative;padding-top:125%;background:rgba(245,237,227,0.8);}
+.img-wrap img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;}
+.img-placeholder{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;}
+.img-spinner{width:28px;height:28px;border:3px solid rgba(196,112,90,0.2);border-top-color:var(--rose);border-radius:50%;animation:spin .8s linear infinite;}
+.img-meta{padding:8px 10px;}
+.img-use{font-size:10px;font-weight:700;color:var(--copper);text-transform:uppercase;margin-bottom:6px;}
+.img-actions{display:flex;gap:6px;}
+.img-btn{font-size:11px;padding:4px 8px;border-radius:6px;border:1px solid var(--border);background:none;color:var(--muted);cursor:pointer;font-family:'DM Sans',sans-serif;}
+
+/* CAPTION CARDS */
+.cap-label{display:inline-block;color:#fff;font-size:10px;padding:2px 10px;border-radius:20px;font-weight:700;margin-bottom:10px;}
+.cap-text{font-size:13px;line-height:1.7;color:var(--mid);white-space:pre-line;}
+
+/* HASHTAGS */
+.tag-cloud{display:flex;flex-wrap:wrap;gap:7px;padding:14px;background:rgba(255,255,255,0.6);border-radius:12px;border:1px solid var(--border);}
+.tag{padding:5px 12px;border-radius:20px;font-size:12px;cursor:pointer;font-weight:500;transition:all .15s;}
+
+/* SCHEDULE */
+.sched-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;}
+.day-head{font-size:9px;font-weight:700;color:var(--muted);text-align:center;margin-bottom:5px;text-transform:uppercase;}
+.slot{background:rgba(255,255,255,0.6);border:1px solid var(--border);border-radius:7px;padding:7px 4px;font-size:9px;text-align:center;margin-bottom:5px;}
+.slot.best{background:rgba(212,168,83,0.2);border-color:var(--gold);}
+.slot-time{font-weight:700;color:var(--dark);}
+.slot-type{color:var(--muted);margin-top:2px;line-height:1.3;}
+
+/* WORKFLOW */
+.wf-step{display:flex;gap:12px;padding-bottom:14px;border-bottom:1px solid var(--border);margin-bottom:14px;}
+.wf-step:last-child{border-bottom:none;}
+.wf-num{min-width:34px;height:34px;background:var(--dark);color:var(--cream);border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;flex-shrink:0;}
+.wf-title{font-weight:700;font-size:14px;margin-bottom:2px;}
+.wf-desc{font-size:12px;color:var(--muted);margin-bottom:5px;}
+.wf-chips{display:flex;gap:6px;flex-wrap:wrap;}
+.chip{font-size:11px;padding:2px 8px;border-radius:10px;}
+.chip-time{background:rgba(212,168,83,0.15);color:#8a6020;}
+.chip-hora{background:rgba(180,130,110,0.1);color:var(--muted);}
+
+/* EMPTY STATE */
+.empty{text-align:center;padding:40px 16px;color:var(--light);}
+.empty-icon{font-size:36px;margin-bottom:10px;opacity:.4;}
+.empty-text{font-size:13px;}
+
+/* ERROR */
+.error-box{padding:12px;background:rgba(196,112,90,0.1);border-radius:10px;border:1px solid var(--rose);font-size:12px;color:var(--deep-rose);margin-top:10px;}
+
+/* TOAST */
+#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--dark);color:var(--cream);padding:10px 20px;border-radius:10px;font-size:13px;font-weight:500;z-index:999;white-space:nowrap;box-shadow:0 4px 20px rgba(0,0,0,0.3);opacity:0;transition:all .25s;pointer-events:none;}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-eye">⚡ Sistema Automatizado de Contenido</div>
+    <div class="header-title">Salon <em>Content</em> Engine</div>
+    <div class="header-sub">Tendencias · Scripts · Imágenes IA · Captions · Horario</div>
+  </div>
+
+  <!-- TABS -->
+  <div class="tabs" id="tabs">
+    <button class="tab active" data-tab="trends">🔥 Tendencias</button>
+    <button class="tab" data-tab="scripts">📝 Scripts</button>
+    <button class="tab" data-tab="images">🎨 Imágenes</button>
+    <button class="tab" data-tab="captions">💬 Captions</button>
+    <button class="tab" data-tab="schedule">📅 Horario</button>
+  </div>
+
+  <!-- ═══ PANEL: TRENDS ═══ -->
+  <div class="panel active" id="panel-trends">
+    <span class="lbl">Paso 01 — Descubrimiento Diario</span>
+    <div class="section-title">8 Temas Trending</div>
+    <div class="section-sub">Tocá uno para seleccionarlo y usarlo en todo el sistema</div>
+
+    <div class="card" style="margin-bottom:14px;">
+      <span class="lbl">Filtrar por nicho (opcional)</span>
+      <input type="text" id="niche" placeholder="ej: balayage, rizado, novias...">
+    </div>
+
+    <div class="grid-2" id="trendsGrid"></div>
+
+    <div id="selectedTrendBox" style="display:none;margin-top:14px;">
+      <div class="card accent">
+        <span class="lbl">Tema seleccionado</span>
+        <div id="selectedTrendName" style="font-weight:800;font-size:15px;margin-bottom:6px;"></div>
+        <div id="selectedTrendTips" style="margin-bottom:10px;"></div>
+        <button class="btn btn-rose btn-sm" onclick="goTo('scripts')">Generar Script →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ PANEL: SCRIPTS ═══ -->
+  <div class="panel" id="panel-scripts">
+    <span class="lbl">Paso 02 — Creación de Contenido</span>
+    <div class="section-title">Generador de Scripts</div>
+    <div class="section-sub">Alta retención · Hook de 3 segundos · CTA integrado</div>
+
+    <div class="card" style="margin-bottom:12px;">
+      <span class="lbl">Tema del script</span>
+      <input type="text" id="scriptTopic" placeholder="ej: Balayage butter blonde...">
+    </div>
+
+    <span class="lbl">Formato de video</span>
+    <div class="grid-3" id="formatsGrid" style="margin-bottom:16px;"></div>
+
+    <button class="btn btn-rose btn-full" onclick="genScript()">✨ Generar Script</button>
+
+    <div id="scriptOutput" style="margin-top:14px;"></div>
+  </div>
+
+  <!-- ═══ PANEL: IMAGES ═══ -->
+  <div class="panel" id="panel-images">
+    <span class="lbl">Paso 03 — Imágenes con IA</span>
+    <div class="section-title">FLUX.1 via Hugging Face</div>
+    <div class="section-sub">Generación real con IA · Requiere tu API key 🔑</div>
+
+    <div class="card gold" style="margin-bottom:12px;">
+      <span class="lbl">Tu Hugging Face API Key</span>
+      <input type="password" id="hfKey" placeholder="hf_..." autocomplete="off">
+      <div style="font-size:11px;color:var(--copper);margin-top:6px;">
+        🔑 <b>huggingface.co/settings/tokens</b> → New Token → Read
+      </div>
+      <button class="btn btn-sm btn-outline" style="margin-top:8px;" onclick="saveKey()">💾 Guardar key</button>
+    </div>
+
+    <div class="card" style="margin-bottom:12px;">
+      <span class="lbl">Tema</span>
+      <input type="text" id="imgTopic" placeholder="ej: Balayage butter blonde...">
+    </div>
+
+    <span class="lbl">Estética visual</span>
+    <div class="grid-3" id="stylesGrid" style="margin-bottom:16px;"></div>
+
+    <button class="btn btn-rose btn-full" id="genImgBtn" onclick="genImages()">🖼️ Generar 4 Imágenes</button>
+    <div id="imgError"></div>
+    <div id="imagesOutput" style="margin-top:16px;"></div>
+  </div>
+
+  <!-- ═══ PANEL: CAPTIONS ═══ -->
+  <div class="panel" id="panel-captions">
+    <span class="lbl">Paso 04 — Engagement</span>
+    <div class="section-title">Captions & Hashtags</div>
+    <div class="section-sub">3 variaciones de longitud · 25 hashtags categorizados</div>
+
+    <div class="card" style="margin-bottom:12px;">
+      <span class="lbl">Tema del post</span>
+      <input type="text" id="capTopic" placeholder="ej: Transformación balayage...">
+    </div>
+
+    <span class="lbl">Tono de voz</span>
+    <div id="tonesGrid" style="display:flex;flex-direction:column;gap:6px;margin-bottom:16px;"></div>
+
+    <button class="btn btn-rose btn-full" onclick="genCaptions()">💬 Generar Captions</button>
+    <div id="captionsOutput" style="margin-top:14px;"></div>
+  </div>
+
+  <!-- ═══ PANEL: SCHEDULE ═══ -->
+  <div class="panel" id="panel-schedule">
+    <span class="lbl">Paso 05 — Publicación</span>
+    <div class="section-title">Horario Semanal Óptimo</div>
+    <div class="section-sub">Basado en picos de actividad de Instagram</div>
+
+    <div class="card" style="margin-bottom:14px;">
+      <span class="lbl">Posts por día</span>
+      <div style="display:flex;gap:8px;" id="ppdGrid"></div>
+    </div>
+
+    <div class="card accent" style="margin-bottom:14px;">
+      <span class="lbl">⭐ Mejores horarios</span>
+      <div id="bestSlots"></div>
+    </div>
+
+    <span class="lbl">Grilla semanal</span>
+    <div class="sched-grid" id="schedGrid" style="margin-bottom:20px;"></div>
+
+    <span class="lbl">Flujo diario completo</span>
+    <div id="workflowSteps"></div>
+  </div>
+
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════
+// DATA
+// ═══════════════════════════════════════
+const TRENDS = [
+  {emoji:"🌟",name:"Balayage Butter Blonde",angle:"El color más pedido del año",score:96,badge:"Viral",tips:["Usa papel aluminio en capas superiores","Aplica toner violeta para eliminar amarillos","El resultado ideal tarda 2–3 sesiones"]},
+  {emoji:"✂️",name:"Wolf Cut Texturizado",angle:"Corte tendencia Gen Z y Millennial",score:93,badge:"Tendencia",tips:["Ideal para cabellos medios y largos","Requiere difusor para definir la forma","El flequillo curtain es clave"]},
+  {emoji:"🌊",name:"Beach Waves sin Calor",angle:"Tutorial ondas naturales overnight",score:89,badge:"En Alza",tips:["Trenza húmeda antes de dormir","Usa mousse de fijación media","Desármala con aceite de argán"]},
+  {emoji:"🎨",name:"Color Blocking",angle:"Dos colores opuestos, un look brutal",score:87,badge:"Hot",tips:["Elige colores del círculo cromático opuestos","Requiere decoloración previa","Mejor en cabello oscuro"]},
+  {emoji:"💆",name:"Rituales de Hidratación",angle:"Cabello sano desde adentro",score:91,badge:"Evergreen",tips:["Mascarilla 30 min antes del lavado","Aceite de oliva para puntas secas","Agua fría sella la cutícula"]},
+  {emoji:"🌿",name:"Baño de Crema Natural",angle:"Ingredientes de cocina para tu cabello",score:84,badge:"En Alza",tips:["Aguacate + aceite de coco = hidratación intensa","Aplica de medios a puntas","Cubre con gorra 20 minutos"]},
+  {emoji:"✨",name:"Keratina en Casa",angle:"Alisar sin plancha, el secreto",score:88,badge:"Tendencia",tips:["Busca fórmulas sin formaldehído","Aplica en cabello limpio y seco","Espera 3 días antes de lavar"]},
+  {emoji:"🔥",name:"Flequillo Cortina",angle:"El retoque que cambia todo el look",score:90,badge:"Viral",tips:["Se puede hacer en casa con tijeras rectas","Divide en dos partes iguales","Largo ideal al nivel de los pómulos"]},
+];
+
+const FORMATS = [
+  {id:"Tutorial Hook",icon:"🪝",dur:"15–30s"},
+  {id:"Antes & Después",icon:"✨",dur:"15–20s"},
+  {id:"Tips & Mitos",icon:"💡",dur:"30–45s"},
+  {id:"Día a Día",icon:"🎥",dur:"30–60s"},
+  {id:"Reacción Cliente",icon:"😍",dur:"15–30s"},
+  {id:"Review Producto",icon:"🧴",dur:"20–40s"},
+];
+
+const SCRIPTS = {
+  "Tutorial Hook": t=>({hook:`¿Llevas años intentando lograr ${t} sin resultado? Esto cambia todo.`,hookNote:"Ataca el dolor del espectador — genera curiosidad inmediata",setup:`El 90% comete el mismo error con ${t}. Y lo peor es que nadie te lo dice.`,value:`Primero: prepara el cabello correctamente — sin esto nada funciona.\nSegundo: la técnica importa más que el producto.\nTercero: el resultado depende de este paso que todos se saltan.\n¿Cuál es? Te lo muestro ahora.`,cta:`Guarda este video antes de que lo necesites 💾\nSigue para más tips que nadie te cuenta.`,tip:"Muestra el resultado ANTES del tutorial en los primeros 2 segundos.",time:"28s"}),
+  "Antes & Después": t=>({hook:`Esto fue lo que pasó cuando hice ${t} por primera vez 😱`,hookNote:"El shock visual del antes/después retiene hasta el final",setup:`Mi clienta llegó con el cabello así. Llevaba 3 años sin encontrar solución.`,value:`Solo usamos 3 productos.\nEl proceso tomó exactamente 2 horas.\nEl secreto estuvo en la preparación previa.\nResultado: lo que ves ahora.`,cta:`¿Quieres el mismo resultado? Link en bio para reservar 📲`,tip:"Usa split-screen con música de anticipación.",time:"18s"}),
+  "Tips & Mitos": t=>({hook:`3 mitos sobre ${t} que te han estado mintiendo 🚨`,hookNote:"La palabra mito genera controversia — todos quieren saber si creen algo falso",setup:`Después de 10 años en el salón, estos son los errores que veo repetirse.`,value:`MITO 1: Necesitas productos caros — FALSO. La técnica vale más.\nMITO 2: Solo funciona en cierto tipo de cabello — FALSO.\nMITO 3: Lo puedes hacer igual en casa — DEPENDE.`,cta:`Guarda y comparte con alguien que lo necesita 🙌`,tip:"Enumera los mitos en pantalla con texto grande.",time:"35s"}),
+  "Día a Día": t=>({hook:`Un día normal en el salón haciendo ${t}. Sin filtros 🎬`,hookNote:"El contenido sin filtros genera confianza y autenticidad real",setup:`Son las 9AM. Tengo 4 clientes hoy. Aquí te muestro cómo es realmente.`,value:`Cliente 1: ${t} completo.\nCliente 2: retoque.\nLos trucos entre cliente y cliente.\nY los momentos difíciles también.`,cta:`¿Querés más contenido así? Comenta SÍ 👇`,tip:"Cámara en primera persona + música lo-fi = +40% watch time.",time:"45s"}),
+  "Reacción Cliente": t=>({hook:`Su reacción cuando vio el resultado de ${t} 🥹`,hookNote:"Las reacciones emocionales reales son el contenido más compartido",setup:`Llevaba meses soñando con este cambio. Hoy fue el día.`,value:`El proceso duró toda la mañana.\nUsamos la técnica del salón.\nCuando quitamos la capa y le dimos el espejo...\nEsta fue su reacción.`,cta:`Reserva tu cita — link en bio ❤️`,tip:"Captura la reacción en video continuo sin cortes.",time:"22s"}),
+  "Review Producto": t=>({hook:`Probé ${t} por 30 días. Resultado honesto 👇`,hookNote:"Reviews con tiempo definido generan credibilidad y clics",setup:`Me prometieron que iba a cambiar mi manera de trabajar.`,value:`Semana 1: resultado mediocre.\nSemana 2: diferencia real.\nSemana 3–4: esto cambió todo.\nVeredicto: ¿para quién sí y para quién no?`,cta:`¿Lo usaste? Contame 💬`,tip:"Muestra el producto físico en cámara al inicio.",time:"38s"}),
+};
+
+const STYLES = [
+  {id:"Luxury Editorial",icon:"✨",prompt:t=>`ultra-close portrait woman with ${t} hairstyle, Vogue editorial beauty lighting, silk ivory background, razor-sharp hair texture, high fashion luxury, 8K cinematic`},
+  {id:"Warm & Organic",icon:"🌿",prompt:t=>`woman with ${t} hair, golden hour sunlight, wildflowers bokeh, film grain, warm amber tones, candid natural portrait`},
+  {id:"Moody Dark",icon:"🌑",prompt:t=>`dramatic portrait woman with ${t} hair, studio noir lighting, deep shadows, charcoal background, high contrast fashion editorial`},
+  {id:"Bright & Clean",icon:"☀️",prompt:t=>`bright portrait woman with ${t} hair, white studio background, soft box lighting, crisp clean minimal, commercial beauty photography`},
+  {id:"Retro Film",icon:"📷",prompt:t=>`vintage portrait woman with ${t} hair, 35mm film grain, faded colors, light leaks, 1970s beauty aesthetic nostalgic`},
+  {id:"Bold & Graphic",icon:"🎭",prompt:t=>`graphic portrait woman with ${t} hair, bold geometric background, pop art colors, high contrast fashion editorial striking`},
+];
+
+const IMG_USES = ["Cover del Reel","Slide proceso","Resultado final","Detalle textura"];
+const IMG_SUFFIX = {"Cover del Reel":"face close-up, cover frame composition","Slide proceso":"hair stylist hands working, overhead shot, salon tools","Resultado final":"full portrait, beautiful glowing result","Detalle textura":"extreme macro hair strands, bokeh background, texture detail"};
+
+const TONES = ["Amigable y Conversacional","Profesional y Lujoso","Educativo y Útil"];
+
+const CAPTIONS = {
+  "Amigable": t=>({
+    short:`¿Ya probaste ${t}? 😍 Esto te va a cambiar la vida.\n\n👇 Guarda para cuando lo necesites`,
+    medium:`Hablemos de ${t} porque NECESITO que lo sepas 🗣️\n\nDespués de ayudar a cientos de clientas, aprendí que el secreto no está donde todos creen.\n\nTe lo cuento todo en el video 👆\n\n💬 ¿Cuál es tu mayor duda? Comenta abajo`,
+    long:`Okk necesito hablar de ${t} porque estoy obsesionada con los resultados 🥹✨\n\nCada clienta que prueba esto sale transformada — no solo el cabello, sino la confianza.\n\nEn el video te muestro exactamente cómo lo hacemos, paso a paso.\n\nPorque el conocimiento debe compartirse 🤍\n\n¿Tienes preguntas? 👇\n\n📲 Reservas: link en bio`,
+  }),
+  "Profesional": t=>({
+    short:`${t} — El estándar de excelencia que mereces ✨\n\nReservas: link en bio`,
+    medium:`La diferencia entre un resultado ordinario y uno extraordinario en ${t} está en los detalles que solo un profesional conoce.\n\nTrabajamos con técnicas de precisión y años de experiencia ✨\n\n📲 Agenda tu consulta — link en bio`,
+    long:`En nuestra filosofía, ${t} no es simplemente un servicio — es una experiencia diseñada para transformar.\n\nCada cliente recibe una consulta personalizada porque no hay dos cabellos iguales.\n\nTécnica impecable. Productos de primera línea. Atención al detalle que no negociamos ✨\n\nConsultas privadas disponibles — link en bio\n📍 Atención con cita previa`,
+  }),
+  "Educativo": t=>({
+    short:`Todo lo que necesitas saber sobre ${t} en 30 segundos 📚\n\n💾 Guarda esto`,
+    medium:`Guía rápida de ${t} para no cometer los errores más comunes ⬇️\n\n✅ Lo que SÍ funciona\n❌ Lo que debes evitar\n💡 El tip que nadie te dice\n\nGuarda para no perderlo 💾\n\n¿Dudas? Pregunta abajo 👇`,
+    long:`Hoy hablamos de ${t} de manera completa 📖\n\nDespués de este video vas a entender:\n→ Por qué el 70% no obtiene el resultado que espera\n→ Qué productos realmente valen\n→ La técnica correcta\n→ Cómo mantener el resultado\n\nEl conocimiento correcto cambia todo 🤍\n\n💾 Guarda y comparte\n\n¿Qué tema querés que haga después? 👇`,
+  }),
+};
+
+const HASHTAGS = [
+  {t:"#cabello",s:"massive"},{t:"#pelo",s:"massive"},{t:"#beauty",s:"massive"},{t:"#hair",s:"massive"},{t:"#hairstyle",s:"massive"},
+  {t:"#haircolor",s:"medium"},{t:"#salonlife",s:"medium"},{t:"#hairtransformation",s:"medium"},{t:"#colorista",s:"medium"},{t:"#hairgoals",s:"medium"},{t:"#peluqueria",s:"medium"},{t:"#balayage",s:"medium"},{t:"#haircare",s:"medium"},
+  {t:"#hairinspo",s:"niche"},{t:"#salonhair",s:"niche"},{t:"#hairtips",s:"niche"},{t:"#beautysalon",s:"niche"},{t:"#cabellosano",s:"niche"},{t:"#cabelloperfecto",s:"niche"},{t:"#hairlover",s:"niche"},
+  {t:"#TuCiudadHair",s:"local"},{t:"#SalonTuCiudad",s:"local"},{t:"#PeluqueriaTuCiudad",s:"local"},{t:"#CabelleriaLocal",s:"local"},{t:"#TuSalon",s:"local"},
+];
+
+const SCHED = {
+  "2":[{time:"7:30 AM",type:"Tutorial / Tips",best:true},{time:"7:00 PM",type:"Antes & Después",best:true}],
+  "3":[{time:"7:30 AM",type:"Tutorial / Tips",best:true},{time:"12:30 PM",type:"Proceso / BTS",best:false},{time:"7:00 PM",type:"Antes & Después",best:true}],
+  "5":[{time:"7:00 AM",type:"Tutorial rápido",best:true},{time:"10:00 AM",type:"Tip del día",best:false},{time:"1:00 PM",type:"Proceso",best:false},{time:"5:00 PM",type:"Antes & Después",best:true},{time:"8:00 PM",type:"Reacción",best:true}],
+};
+
+const DAYS = ["Lun","Mar","Mié","Jue","Vie","Sáb","Dom"];
+
+// ═══════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════
+let state = {
+  selectedTrend: null,
+  scriptFormat: "Tutorial Hook",
+  imageStyle: "Luxury Editorial",
+  captionTone: "Amigable",
+  ppd: "3",
+  selectedTags: new Set(),
+  imgs: [],
+};
+
+// Load saved HF key
+const savedKey = localStorage.getItem("hf_key");
+if (savedKey) { document.addEventListener("DOMContentLoaded", ()=>{ const el=document.getElementById("hfKey"); if(el) el.value=savedKey; }); }
+
+// ═══════════════════════════════════════
+// UTILS
+// ═══════════════════════════════════════
+function showToast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  setTimeout(()=>t.classList.remove("show"), 2000);
+}
+
+function copyText(text) {
+  navigator.clipboard.writeText(text).then(()=>showToast("✓ Copiado al portapapeles"));
+}
+
+function goTo(tab) {
+  document.querySelectorAll(".tab").forEach(b=>b.classList.remove("active"));
+  document.querySelectorAll(".panel").forEach(p=>p.classList.remove("active"));
+  document.querySelector(`[data-tab="${tab}"]`).classList.add("active");
+  document.getElementById(`panel-${tab}`).classList.add("active");
+  window.scrollTo(0,0);
+}
+
+function saveKey() {
+  const key = document.getElementById("hfKey").value.trim();
+  if (!key) return showToast("Ingresá tu key primero");
+  localStorage.setItem("hf_key", key);
+  showToast("✅ Key guardada en el dispositivo");
+}
+
+// ═══════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════
+document.addEventListener("DOMContentLoaded", () => {
+
+  // TABS
+  document.getElementById("tabs").addEventListener("click", e => {
+    const btn = e.target.closest(".tab");
+    if (!btn) return;
+    goTo(btn.dataset.tab);
+  });
+
+  // Load saved key
+  const sk = localStorage.getItem("hf_key");
+  if (sk) document.getElementById("hfKey").value = sk;
+
+  renderTrends();
+  renderFormats();
+  renderStyles();
+  renderTones();
+  renderPPD();
+  renderSchedule();
+  renderWorkflow();
+});
+
+// ═══════════════════════════════════════
+// TRENDS
+// ═══════════════════════════════════════
+function renderTrends() {
+  const niche = (document.getElementById("niche").value||"").toLowerCase();
+  const filtered = niche ? TRENDS.filter(t=>(t.name+t.angle).toLowerCase().includes(niche)) : TRENDS;
+  const grid = document.getElementById("trendsGrid");
+  grid.innerHTML = (filtered.length ? filtered : TRENDS).map((t,i)=>`
+    <div class="trend-card${state.selectedTrend?.name===t.name?" selected":""}" onclick="selectTrend(${TRENDS.indexOf(t)})">
+      <div class="trend-emoji">${t.emoji}</div>
+      <div class="trend-name">${t.name}</div>
+      <div class="trend-angle">${t.angle}</div>
+      <div class="trend-badge">${t.badge} · ${t.score}/100</div>
+      <div class="trend-bar"><div class="trend-fill" style="width:${t.score}%"></div></div>
+    </div>`).join("");
+}
+
+document.addEventListener("DOMContentLoaded",()=>{
+  document.getElementById("niche").addEventListener("input", renderTrends);
+});
+
+function selectTrend(i) {
+  state.selectedTrend = TRENDS[i];
+  document.getElementById("selectedTrendName").textContent = TRENDS[i].name;
+  document.getElementById("selectedTrendTips").innerHTML = TRENDS[i].tips.map(tip=>`<div style="font-size:12px;color:var(--mid);margin-bottom:3px;">💡 ${tip}</div>`).join("");
+  document.getElementById("selectedTrendBox").style.display = "block";
+  // Pre-fill other fields
+  document.getElementById("scriptTopic").value = TRENDS[i].name;
+  document.getElementById("imgTopic").value = TRENDS[i].name;
+  document.getElementById("capTopic").value = TRENDS[i].name;
+  renderTrends();
+}
+
+// ═══════════════════════════════════════
+// SCRIPTS
+// ═══════════════════════════════════════
+function renderFormats() {
+  document.getElementById("formatsGrid").innerHTML = FORMATS.map(f=>`
+    <div class="fmt-card${state.scriptFormat===f.id?" selected":""}" onclick="selectFormat('${f.id}')">
+      <div class="fmt-icon">${f.icon}</div>
+      <div class="fmt-name">${f.id}</div>
+      <div class="fmt-dur">${f.dur}</div>
+    </div>`).join("");
+}
+
+function selectFormat(id) {
+  state.scriptFormat = id;
+  renderFormats();
+}
+
+function genScript() {
+  const topic = document.getElementById("scriptTopic").value.trim() || state.selectedTrend?.name || "cabello";
+  const fn = SCRIPTS[state.scriptFormat] || SCRIPTS["Tutorial Hook"];
+  const s = fn(topic);
+  const tagColors = {"🪝 HOOK":"#b5703e","📌 SETUP":"#3d2b24","💎 VALOR":"#1a1210","✅ CTA":"#5a8a6e"};
+  const sections = [
+    {tag:"🪝 HOOK",text:s.hook,note:s.hookNote},
+    {tag:"📌 SETUP",text:s.setup},
+    {tag:"💎 VALOR",text:s.value},
+    {tag:"✅ CTA",text:s.cta},
+  ];
+  const fullScript = `HOOK:\n${s.hook}\n\nSETUP:\n${s.setup}\n\nVALOR:\n${s.value}\n\nCTA:\n${s.cta}`;
+
+  document.getElementById("scriptOutput").innerHTML = `
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;">
+        <div>
+          <div style="font-weight:800;font-size:14px;">${topic}</div>
+          <div style="font-size:11px;color:var(--copper);margin-top:2px;">⏱ ${s.time} · ${state.scriptFormat}</div>
+        </div>
+        <button class="btn btn-outline btn-sm" onclick="copyText(${JSON.stringify(fullScript)})">📋 Copiar</button>
+      </div>
+      ${sections.map(sec=>`
+        <div style="margin-bottom:12px;">
+          <span class="script-tag" style="background:${tagColors[sec.tag]}">${sec.tag}</span>
+          <div class="script-text">${sec.text}</div>
+          ${sec.note?`<div class="script-note">↳ ${sec.note}</div>`:""}
+        </div>`).join("")}
+      <div class="retention-box">
+        <div style="font-size:10px;font-weight:700;color:var(--copper);margin-bottom:3px;">📈 TIP DE RETENCIÓN</div>
+        <div style="font-size:12px;color:var(--mid);">${s.tip}</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;">
+      <button class="btn btn-outline btn-sm" onclick="genScript()">🔄 Regenerar</button>
+      <button class="btn btn-dark btn-sm" onclick="goTo('images')">→ Generar Imágenes</button>
+    </div>`;
+}
+
+// ═══════════════════════════════════════
+// IMAGES
+// ═══════════════════════════════════════
+function renderStyles() {
+  document.getElementById("stylesGrid").innerHTML = STYLES.map(s=>`
+    <div class="style-card${state.imageStyle===s.id?" selected":""}" onclick="selectStyle('${s.id}')">
+      <div class="style-icon">${s.icon}</div>
+      <div class="style-name">${s.id}</div>
+    </div>`).join("");
+}
+
+function selectStyle(id) {
+  state.imageStyle = id;
+  renderStyles();
+}
+
+function buildPrompt(use) {
+  const topic = document.getElementById("imgTopic").value.trim() || state.selectedTrend?.name || "cabello";
+  const styleObj = STYLES.find(s=>s.id===state.imageStyle) || STYLES[0];
+  const base = styleObj.prompt(topic);
+  const suffix = IMG_SUFFIX[use] || "beauty portrait";
+  return `${base}, ${suffix}, professional photography, no text, no watermark`;
+}
+
+async function hfGenerate(prompt) {
+  const key = document.getElementById("hfKey").value.trim() || localStorage.getItem("hf_key") || "";
+  if (!key) throw new Error("Ingresá tu Hugging Face API key primero");
+  const res = await fetch("https://api-inference.huggingface.co/models/black-forest-labs/FLUX.1-schnell", {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${key}`,
+      "Content-Type": "application/json",
+      "x-use-cache": "false",
+    },
+    body: JSON.stringify({inputs: prompt, parameters:{width:768,height:960}})
+  });
+  if (!res.ok) {
+    const txt = await res.text().catch(()=>"");
+    if (res.status===401) throw new Error("API key inválida — verificá tu token");
+    if (res.status===503) throw new Error("Modelo cargando — reintentá en 20 segundos");
+    if (res.status===429) throw new Error("Límite alcanzado — esperá un momento");
+    throw new Error(`Error ${res.status}: ${txt.slice(0,100)}`);
+  }
+  const blob = await res.blob();
+  if (!blob.type.startsWith("image/")) throw new Error("Respuesta no es una imagen");
+  return URL.createObjectURL(blob);
+}
+
+function renderImgCard(i, img) {
+  const card = document.getElementById(`img-card-${i}`);
+  if (!card) return;
+  card.querySelector(".img-wrap").innerHTML = img.loading
+    ? `<div class="img-placeholder"><div class="img-spinner"></div><div style="font-size:11px;color:var(--copper)">Generando...</div></div>`
+    : img.error
+    ? `<div class="img-placeholder"><div style="font-size:24px">⚠️</div><div style="font-size:11px;color:var(--rose);text-align:center;padding:0 8px">${img.error}</div><button class="img-btn" onclick="regenImg(${i})" style="margin-top:4px">🔄 Reintentar</button></div>`
+    : `<img src="${img.url}" alt="${img.use}" loading="lazy">`;
+
+  card.querySelector(".img-actions").innerHTML = img.url
+    ? `<a href="${img.url}" download="salon-${img.use.replace(/ /g,'-')}.jpg" class="img-btn">⬇️ Guardar</a>
+       <button class="img-btn" onclick="regenImg(${i})">🔄</button>`
+    : "";
+}
+
+async function genImages() {
+  const btn = document.getElementById("genImgBtn");
+  document.getElementById("imgError").innerHTML = "";
+  btn.disabled = true;
+  btn.innerHTML = "⏳ Generando...";
+
+  state.imgs = IMG_USES.map(use=>({use, url:null, loading:true, error:""}));
+
+  document.getElementById("imagesOutput").innerHTML = `
+    <div style="margin-bottom:10px;"><span class="lbl">Imágenes generadas</span></div>
+    <div class="img-grid">
+      ${IMG_USES.map((use,i)=>`
+        <div class="img-card" id="img-card-${i}">
+          <div class="img-wrap"><div class="img-placeholder"><div class="img-spinner"></div><div style="font-size:11px;color:var(--copper)">Generando...</div></div></div>
+          <div class="img-meta"><div class="img-use">${use}</div><div class="img-actions"></div></div>
+        </div>`).join("")}
+    </div>
+    <div class="card gold" style="margin-top:12px;font-size:12px;color:var(--mid);line-height:1.8;">
+      💡 <b>Para guardar:</b> Toca "⬇️ Guardar" en cada imagen<br>
+      🔄 <b>¿No te gusta?</b> Toca 🔄 para regenerar esa imagen
+    </div>`;
+
+  await Promise.all(IMG_USES.map(async (use, i) => {
+    try {
+      const url = await hfGenerate(buildPrompt(use));
+      state.imgs[i] = {use, url, loading:false, error:""};
+      renderImgCard(i, state.imgs[i]);
+    } catch(e) {
+      state.imgs[i] = {use, url:null, loading:false, error:e.message};
+      renderImgCard(i, state.imgs[i]);
+      if (i===0) document.getElementById("imgError").innerHTML = `<div class="error-box">❌ ${e.message}</div>`;
+    }
+  }));
+
+  btn.disabled = false;
+  btn.innerHTML = "🖼️ Generar 4 Imágenes";
+}
+
+async function regenImg(i) {
+  state.imgs[i] = {...state.imgs[i], loading:true, error:"", url:null};
+  renderImgCard(i, state.imgs[i]);
+  try {
+    const url = await hfGenerate(buildPrompt(IMG_USES[i]));
+    state.imgs[i] = {...state.imgs[i], url, loading:false};
+    renderImgCard(i, state.imgs[i]);
+  } catch(e) {
+    state.imgs[i] = {...state.imgs[i], loading:false, error:e.message};
+    renderImgCard(i, state.imgs[i]);
+  }
+}
+
+// ═══════════════════════════════════════
+// CAPTIONS
+// ═══════════════════════════════════════
+function renderTones() {
+  document.getElementById("tonesGrid").innerHTML = TONES.map(t=>{
+    const key = t.startsWith("A")?"Amigable":t.startsWith("P")?"Profesional":"Educativo";
+    const sel = state.captionTone===key;
+    return `<div style="border:1.5px solid ${sel?"var(--rose)":"var(--border)"};background:${sel?"rgba(196,112,90,0.08)":"rgba(255,255,255,0.6)"};border-radius:10px;padding:10px 14px;cursor:pointer;font-size:13px;font-weight:${sel?700:400};" onclick="selectTone('${key}')">${t}</div>`;
+  }).join("");
+}
+
+function selectTone(key) {
+  state.captionTone = key;
+  renderTones();
+}
+
+const tagBg = {massive:["#fde8e0","#8b3d2e"],medium:["#fdf3e0","#7a5010"],niche:["#e8f5ee","#2e6b40"],local:["#e8eaf6","#303f9f"]};
+
+function genCaptions() {
+  const topic = document.getElementById("capTopic").value.trim() || state.selectedTrend?.name || "cabello";
+  const caps = CAPTIONS[state.captionTone]?.(topic);
+  if (!caps) return;
+
+  const capItems = [
+    {key:"short",label:"⚡ Corta",color:"#d4a853"},
+    {key:"medium",label:"📱 Media",color:"#c4705a"},
+    {key:"long",label:"📖 Larga",color:"#5a8a6e"},
+  ];
+
+  const hashHtml = HASHTAGS.map(h=>{
+    const [bg,fg] = tagBg[h.s]||tagBg.niche;
+    const sel = state.selectedTags.has(h.t);
+    return `<span class="tag" style="background:${sel?fg:bg};color:${sel?"#fff":fg};" onclick="toggleTag('${h.t}')">${h.t}</span>`;
+  }).join("");
+
+  document.getElementById("captionsOutput").innerHTML = `
+    ${capItems.map(c=>`
+      <div class="card" style="margin-bottom:10px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+          <span class="cap-label" style="background:${c.color}">${c.label}</span>
+          <button class="btn btn-outline btn-sm" onclick="copyText(${JSON.stringify(caps[c.key])})">📋 Copiar</button>
+        </div>
+        <div class="cap-text">${caps[c.key]}</div>
+      </div>`).join("")}
+    <div style="margin-top:14px;">
+      <span class="lbl">Hashtags — Toca para seleccionar</span>
+      <div class="tag-cloud" id="tagCloud">${hashHtml}</div>
+      <div style="display:flex;gap:8px;margin-top:10px;align-items:center;">
+        <button class="btn btn-outline btn-sm" onclick="copyTags()">📋 Copiar ${state.selectedTags.size>0?`(${state.selectedTags.size})`:"todos"}</button>
+        <span style="font-size:11px;color:var(--muted);">🔴 Masivos · 🟠 Medios · 🟢 Nicho · 🔵 Locales</span>
+      </div>
+    </div>`;
+}
+
+function toggleTag(tag) {
+  state.selectedTags.has(tag) ? state.selectedTags.delete(tag) : state.selectedTags.add(tag);
+  const caps = CAPTIONS[state.captionTone]?.("_");
+  if (caps) genCaptions(); // re-render to update tag states
+}
+
+function copyTags() {
+  const text = state.selectedTags.size>0
+    ? [...state.selectedTags].join(" ")
+    : HASHTAGS.map(h=>h.t).join(" ");
+  copyText(text);
+}
+
+// ═══════════════════════════════════════
+// SCHEDULE
+// ═══════════════════════════════════════
+function renderPPD() {
+  document.getElementById("ppdGrid").innerHTML = ["2","3","5"].map(n=>`
+    <div style="flex:1;border:1.5px solid ${state.ppd===n?"var(--rose)":"var(--border)"};background:${state.ppd===n?"rgba(196,112,90,0.08)":"rgba(255,255,255,0.6)"};border-radius:10px;padding:12px 8px;text-align:center;cursor:pointer;" onclick="selectPPD('${n}')">
+      <div style="font-size:20px;font-weight:800;color:${state.ppd===n?"var(--rose)":"var(--dark)"};">${n}</div>
+      <div style="font-size:11px;color:var(--muted);">${n==="2"?"Starter":n==="3"?"Growth":"Pro"}</div>
+    </div>`).join("");
+}
+
+function selectPPD(n) {
+  state.ppd = n;
+  renderPPD();
+  renderBestSlots();
+  renderSchedule();
+}
+
+function renderBestSlots() {
+  document.getElementById("bestSlots").innerHTML = SCHED[state.ppd].filter(p=>p.best).map(p=>`
+    <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);">
+      <div style="font-weight:700;color:var(--gold);">${p.time}</div>
+      <div style="font-size:12px;color:var(--mid);">${p.type}</div>
+    </div>`).join("");
+}
+
+function renderSchedule() {
+  renderBestSlots();
+  document.getElementById("schedGrid").innerHTML = DAYS.map(day=>`
+    <div>
+      <div class="day-head">${day}</div>
+      ${SCHED[state.ppd].map(p=>`
+        <div class="slot${p.best?" best":""}">
+          <div class="slot-time">${p.time}</div>
+          <div class="slot-type">${p.type}</div>
+        </div>`).join("")}
+    </div>`).join("");
+}
+
+function renderWorkflow() {
+  const steps = [
+    {n:1,t:"Seleccionar Tendencia",d:"Pestaña Tendencias → elige tu tema del día",hora:"8:00 AM",time:"5 min"},
+    {n:2,t:"Generar Script",d:"Pestaña Scripts → elige formato → genera",hora:"8:10 AM",time:"5 min"},
+    {n:3,t:"Generar Imágenes",d:"Pestaña Imágenes → tu key HF → elige estética → genera",hora:"8:20 AM",time:"5 min"},
+    {n:4,t:"Editar Video",d:"CapCut/InShot: imágenes + audio trending + texto",hora:"8:30 AM",time:"30 min"},
+    {n:5,t:"Captions & Hashtags",d:"Pestaña Captions → copia la variación que prefieras",hora:"9:00 AM",time:"5 min"},
+    {n:6,t:"Publicar",d:"Meta Business Suite o Later para programar posts",hora:"9:10 AM",time:"10 min"},
+  ];
+  document.getElementById("workflowSteps").innerHTML = steps.map((s,i)=>`
+    <div class="wf-step">
+      <div class="wf-num">${s.n}</div>
+      <div>
+        <div class="wf-title">${s.t}</div>
+        <div class="wf-desc">${s.d}</div>
+        <div class="wf-chips">
+          <span class="chip chip-time">⏱ ${s.time}</span>
+          <span class="chip chip-hora">${s.hora}</span>
+        </div>
+      </div>
+    </div>`).join("");
+}
+</script>
+</body>
+</html>
